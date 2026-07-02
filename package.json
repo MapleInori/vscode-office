@@ -238,9 +238,6 @@
                                                                                                            "enum":  [
                                                                                                                         "Auto",
                                                                                                                         "Light",
-                                                                                                                        "Solarized",
-                                                                                                                        "Warm Light",
-                                                                                                                        "Dim Light",
                                                                                                                         "One Dark",
                                                                                                                         "Github Dark",
                                                                                                                         "Nord",
@@ -255,15 +252,10 @@
                                                                                                                "enum":  [
                                                                                                                             "Auto",
                                                                                                                             "Github",
-                                                                                                                            "Solarized Light",
-                                                                                                                            "Material Light",
-                                                                                                                            "Quiet Light",
                                                                                                                             "One Light",
                                                                                                                             "Dracula",
                                                                                                                             "Monokai",
-                                                                                                                            "One Dark",
-                                                                                                                            "Solarized Dark",
-                                                                                                                            "Material Dark"
+                                                                                                                            "One Dark"
                                                                                                                         ],
                                                                                                                "default":  "Auto",
                                                                                                                "markdownDescription":  "CodeMirror syntax theme for code blocks in the Markdown editor."

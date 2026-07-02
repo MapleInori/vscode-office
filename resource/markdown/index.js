@@ -61,8 +61,26 @@ handler.on("open", async (md) => {
     if (document.hidden) flushPendingSave();
   });
 
-  const editor = new Vditor('vditor', {
-    value: content,
+  let editor;
+  let initialContentLoaded = false;
+  const initialContent = "";
+  const initialEditMode = documentProfile.largeDocument ? "wysiwyg" : editMode;
+  const loadEditorContent = (nextContent, markSaved = false) => {
+    const apply = () => {
+      editor.setValue(nextContent);
+      if (markSaved) {
+        editor.markSaved(nextContent);
+      }
+    };
+    if (documentProfile.largeDocument) {
+      runAfterFirstPaint(apply);
+    } else {
+      apply();
+    }
+  };
+
+  editor = new Vditor('vditor', {
+    value: initialContent,
     cdn: rootPath,
     height: '100%',
     outline: {
@@ -74,7 +92,7 @@ handler.on("open", async (md) => {
       id: documentCacheId,
       focusHost: 'vscode',
     },
-    mode: editMode,
+    mode: initialEditMode,
     editorTheme,
     codeMirrorTheme,
     mermaidTheme,
@@ -177,8 +195,8 @@ handler.on("open", async (md) => {
         if (editor.getValue() === content) {
           return;
         }
-        editor.setValue(content);
-        editor.markSaved();
+        initialContentLoaded = true;
+        loadEditorContent(content, true);
       })
       handler.on("gotoBlock", (fragment) => {
         if (fragment) {
@@ -187,6 +205,10 @@ handler.on("open", async (md) => {
       })
 
       runAfterFirstPaint(() => {
+        if (!initialContentLoaded) {
+          initialContentLoaded = true;
+          loadEditorContent(content, true);
+        }
         applyViewerSettingsPayload(md.viewerSettings);
         handler.emit('requestViewerSettings');
         window.setTimeout(() => {

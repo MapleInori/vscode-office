@@ -15,9 +15,6 @@ type IEditMode = "wysiwyg" | "ir";
 type IEditorTheme =
     "Auto" |
     "Light" |
-    "Solarized" |
-    "Warm Light" |
-    "Dim Light" |
     "One Dark" |
     "Github Dark" |
     "Nord" |
@@ -26,15 +23,10 @@ type IEditorTheme =
 type ICodeMirrorTheme =
     "Auto" |
     "Github" |
-    "Solarized Light" |
-    "Material Light" |
-    "Quiet Light" |
     "One Light" |
     "Dracula" |
     "Monokai" |
-    "One Dark" |
-    "Solarized Dark" |
-    "Material Dark";
+    "One Dark";
 type IMermaidTheme =
     "Auto" |
     "Light" |

@@ -10,7 +10,7 @@ export const EDITOR_THEME_GROUPS: IEditorThemeGroup[] = [
     },
     {
         titleKey: "editor-theme-section-light",
-        themes: ["Light", "Solarized", "Warm Light", "Dim Light"],
+        themes: ["Light"],
     },
     {
         titleKey: "editor-theme-section-dark",

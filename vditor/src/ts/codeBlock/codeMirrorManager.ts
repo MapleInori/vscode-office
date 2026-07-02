@@ -43,6 +43,7 @@ export const CM_EDITING_CLASS = "vditor-cm-block--editing";
 export const CM_SPLIT_CLASS = "vditor-cm-block--split";
 const CM_BLOCK_DATA_TYPES = new Set(["code-block", "math-block"]);
 const SPECIAL_LANGUAGES = ["mermaid", "plantuml", "math"];
+const LAZY_CODE_BLOCK_ROOT_MARGIN = 1200;
 
 interface CodeMirrorBinding {
     view: EditorView;
@@ -56,6 +57,15 @@ interface CodeMirrorBinding {
 }
 
 const bindings = new WeakMap<HTMLElement, CodeMirrorBinding>();
+const lazyCodeBlockObservers = new WeakMap<IVditor, IntersectionObserver>();
+
+const disconnectLazyCodeBlockObserver = (vditor: IVditor) => {
+    const observer = lazyCodeBlockObservers.get(vditor);
+    if (observer) {
+        observer.disconnect();
+        lazyCodeBlockObservers.delete(vditor);
+    }
+};
 
 export const isSpecialCodeLanguage = (codeElement: HTMLElement) => {
     for (const lang of SPECIAL_LANGUAGES) {
@@ -1412,7 +1422,75 @@ const mountCodeMirror = (blockElement: HTMLElement, vditor: IVditor, force = fal
     });
 };
 
+const isNearViewport = (element: HTMLElement, margin = LAZY_CODE_BLOCK_ROOT_MARGIN) => {
+    const rect = element.getBoundingClientRect();
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    return rect.bottom >= -margin
+        && rect.top <= viewportHeight + margin
+        && rect.right >= -margin
+        && rect.left <= viewportWidth + margin;
+};
+
+export const renderCodeBlocksNearViewport = (vditor: IVditor) => {
+    disconnectLazyCodeBlockObserver(vditor);
+    const editor = getModeEditor(vditor);
+    if (!editor) {
+        return;
+    }
+    const blocks = Array.from(editor.querySelectorAll(getCodeBlockSelector(vditor.currentMode))) as HTMLElement[];
+    if (blocks.length === 0) {
+        return;
+    }
+
+    const mountAndUnobserve = (blockElement: HTMLElement, observer?: IntersectionObserver) => {
+        if (!blockElement.isConnected) {
+            observer?.unobserve(blockElement);
+            return;
+        }
+        if (!isCmCodeBlock(blockElement)) {
+            observer?.unobserve(blockElement);
+            return;
+        }
+        mountCodeMirror(blockElement, vditor);
+        if (bindings.has(blockElement)) {
+            observer?.unobserve(blockElement);
+        }
+    };
+
+    if (typeof IntersectionObserver === "undefined") {
+        blocks.slice(0, 24).forEach((blockElement) => mountAndUnobserve(blockElement));
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+            if (entry.isIntersecting || entry.intersectionRatio > 0) {
+                mountAndUnobserve(entry.target as HTMLElement, observer);
+            }
+        }
+    }, {
+        root: null,
+        rootMargin: `${LAZY_CODE_BLOCK_ROOT_MARGIN}px 0px`,
+        threshold: 0,
+    });
+    lazyCodeBlockObservers.set(vditor, observer);
+
+    for (const blockElement of blocks) {
+        if (bindings.has(blockElement)) {
+            continue;
+        }
+        if (isNearViewport(blockElement)) {
+            mountAndUnobserve(blockElement, observer);
+        } else {
+            observer.observe(blockElement);
+        }
+    }
+    syncMathBlocksDisplayMode(editor, vditor);
+};
+
 export const renderCodeBlocks = (vditor: IVditor) => {
+    disconnectLazyCodeBlockObserver(vditor);
     const editor = getModeEditor(vditor);
     if (!editor) {
         return;

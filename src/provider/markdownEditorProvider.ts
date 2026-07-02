@@ -219,15 +219,15 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
         }).on("codeMirrorTheme", (theme: string) => {
             const validThemes = [
                 "Auto", "default",
-                "Github", "Solarized Light", "Material Light", "Quiet Light", "One Light",
-                "Dracula", "Monokai", "One Dark", "Solarized Dark", "Material Dark",
+                "Github", "One Light",
+                "Dracula", "Monokai", "One Dark",
             ];
             if (validThemes.includes(theme)) {
                 Global.updateConfig("codeMirrorTheme", theme === "default" ? "Auto" : theme);
             }
         }).on("editorTheme", (theme: string) => {
             const validThemes = [
-                "Auto", "Light", "Solarized", "Warm Light", "Dim Light",
+                "Auto", "Light",
                 "One Dark", "Github Dark", "Nord", "Monokai", "Dracula",
             ];
             if (validThemes.includes(theme)) {
