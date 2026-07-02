@@ -22,12 +22,6 @@ const getLinkClickAction = (event: MouseEvent): ILinkClickAction => {
     return "click";
 };
 
-const getWikilinkElement = (target: HTMLElement) => {
-    if (target.dataset?.type === "wikilink" || target.dataset?.type === "wikilink-embed") {
-        return target;
-    }
-    return target.closest?.("[data-type='wikilink'], [data-type='wikilink-embed'], .obsidian-wikilink, .obsidian-wikilink-embed") as HTMLElement | null;
-};
 
 const resolveIrLink = (target: HTMLElement): Omit<ILinkClickPayload, "action"> | null => {
     if (target.classList.contains("vditor-ir__marker--link")) {
@@ -59,15 +53,6 @@ export const resolveLinkClickFromTarget = (
     if (target.closest(".vditor-ai-dialog-overlay")) {
         return null;
     }
-
-    const footnoteRef = hasClosestByAttribute(target, "data-type", "footnotes-ref");
-    if (footnoteRef) {
-        const label = footnoteRef.getAttribute("data-footnotes-label") || footnoteRef.textContent?.trim() || "";
-        if (label) {
-            return { type: "footnote-ref", href: label, text: label, element: footnoteRef as HTMLElement };
-        }
-    }
-
     const linkRef = hasClosestByAttribute(target, "data-type", "link-ref");
     if (linkRef) {
         const label = linkRef.getAttribute("data-link-label") || linkRef.textContent?.trim() || "";
@@ -75,36 +60,6 @@ export const resolveLinkClickFromTarget = (
             return { type: "link-ref", href: label, text: label, element: linkRef as HTMLElement };
         }
     }
-
-    const tagEl = hasClosestByAttribute(target, "data-type", "obsidian-tag")
-        || target.closest?.(".vditor-obsidian-tag, .obsidian-tag") as HTMLElement | null;
-    if (tagEl) {
-        const text = tagEl.textContent?.trim() || "";
-        const href = text.startsWith("#") ? text.slice(1) : text;
-        if (href) {
-            return { type: "tag", href, text, element: tagEl };
-        }
-    }
-
-    const wikiEl = getWikilinkElement(target);
-    if (wikiEl) {
-        const href = wikiEl.getAttribute("data-href") || wikiEl.dataset?.href || "";
-        const isEmbed = wikiEl.dataset?.type === "wikilink-embed"
-            || wikiEl.classList.contains("obsidian-wikilink-embed")
-            || wikiEl.classList.contains("vditor-wikilink-embed");
-        if (href) {
-            const previewText = (wikiEl.querySelector(".vditor-wikilink__display") as HTMLElement | null)
-                ?.textContent?.trim()
-                || (wikiEl.querySelector(".vditor-wikilink__source") as HTMLElement | null)?.textContent?.trim();
-            return {
-                type: isEmbed ? "wikilink-embed" : "wikilink",
-                href,
-                text: previewText || wikiEl.textContent?.trim() || href,
-                element: wikiEl,
-            };
-        }
-    }
-
     if (target.tagName === "IMG" && !isPlantumlRenderImage(target)) {
         const img = target as HTMLImageElement;
         const parentA = hasClosestByMatchTag(target, "A") as HTMLAnchorElement | false;

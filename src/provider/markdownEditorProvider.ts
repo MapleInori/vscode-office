@@ -9,7 +9,6 @@ import { Holder } from '../service/markdown/holder';
 import { MarkdownService } from '../service/markdownService';
 import { Global, i18n } from '@/common/global';
 import { TelemetryService } from '@/service/telemetryService';
-import { openWikiLink } from '@/service/markdown/wikilink';
 import {
     broadcastToMarkdownWebviews,
     consumePendingBlockScroll,
@@ -186,16 +185,21 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
             unregisterMarkdownWebview(uri);
         });
         handler.on("init", async () => {
-            const viewerSettings = await ViewerSettingsService.loadForWebview();
+            const pendingFragment = consumePendingBlockScroll(uri);
             handler.emit("open", {
                 content, rootPath,
                 documentCacheId: `${uri.scheme}:${uri.toString()}`,
-                pendingFragment: consumePendingBlockScroll(uri),
+                pendingFragment,
                 config: this.getMarkdownWebviewConfig(config),
-                viewerSettings,
-            })
-            this.updateCount(content)
-            this.countStatus.show()
+            });
+            this.updateCount(content);
+            this.countStatus.show();
+        }).on("requestViewerSettings", async () => {
+            const viewerSettings = await ViewerSettingsService.loadForWebview();
+            handler.emit('viewerSettingsSync', { enabled: viewerSettings.enabled });
+            if (viewerSettings.settings) {
+                handler.emit('viewerSettings', viewerSettings.settings);
+            }
         }).on("externalUpdate", e => {
             if (lastManualSaveTime && Date.now() - lastManualSaveTime < 800) return;
             const updatedText = e.document.getText()?.replace(/\r/g, '');
@@ -206,10 +210,6 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
         }).on("command", (command) => {
             vscode.commands.executeCommand(command)
         }).on("openLink", async (linkUri: string) => {
-            if (linkUri.startsWith('wiki:')) {
-                await openWikiLink(uri, linkUri);
-                return;
-            }
             const localUri = parseWebviewResourceUri(linkUri, uri);
             if (localUri) {
                 vscode.commands.executeCommand('vscode.open', localUri, { preview: false });
@@ -342,7 +342,13 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     }
 
     private updateCount(content: string) {
-        this.countStatus.text = i18n('ext.markdown.statusBar', String(content.split(/\r\n|\r|\n/).length), String(content.length))
+        let lines = 1;
+        for (let i = 0; i < content.length; i++) {
+            if (content.charCodeAt(i) === 10) {
+                lines++;
+            }
+        }
+        this.countStatus.text = i18n('ext.markdown.statusBar', String(lines), String(content.length))
     }
 
     private updateTextDocument(document: vscode.TextDocument, content: string) {

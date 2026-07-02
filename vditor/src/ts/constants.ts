@@ -30,15 +30,11 @@ export abstract class Constants {
   ];
   public static readonly CDN = `https://unpkg.com/vscode-vditor@${VDITOR_VERSION}`;
   public static readonly MARKDOWN_OPTIONS = {
-    autoSpace: false,
     codeBlockPreview: true,
-    fixTermTypo: false,
-    footnotes: true,
     linkBase: "",
     linkPrefix: "",
     listStyle: false,
     mark: true,
-    obsidian: true,
     mathBlockPreview: true,
     paragraphBeginningSpace: false,
     sanitize: true,

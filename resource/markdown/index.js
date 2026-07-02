@@ -1,6 +1,30 @@
 import { getToolbar, bindShortcut, createContextMenu } from "./util.js";
 import { mapVscodeLanguageToVditorLang } from "./lang.js";
 
+const SAVE_DEBOUNCE_MS = 500;
+const LARGE_DOCUMENT_BYTES = 100 * 1024;
+const LARGE_DOCUMENT_LINES = 3000;
+
+const runAfterFirstPaint = (task) => {
+  requestAnimationFrame(() => window.setTimeout(task, 0));
+};
+
+const countLines = (text) => {
+  let lines = 1;
+  for (let i = 0; i < text.length; i++) {
+    if (text.charCodeAt(i) === 10) lines++;
+  }
+  return lines;
+};
+
+const getDocumentProfile = (content) => {
+  const lineCount = countLines(content);
+  const hasMermaid = /(^|\n)(```|~~~)\s*mermaid\b/i.test(content);
+  const hasMath = /(^|\n)\s*\$\$|\$\$\s*(\n|$)|(^|[^\\])\$[^$\n]+(^|[^\\])\$/m.test(content);
+  const largeDocument = content.length >= LARGE_DOCUMENT_BYTES || lineCount >= LARGE_DOCUMENT_LINES;
+  return { lineCount, hasMermaid, hasMath, largeDocument };
+};
+
 handler.on("open", async (md) => {
   const { content, rootPath, documentCacheId, pendingFragment, config } = md;
   const {
@@ -10,11 +34,39 @@ handler.on("open", async (md) => {
   if (isWeb) {
     document.body.classList.add('is-web')
   }
+
+  const documentProfile = getDocumentProfile(content);
+  const restoreDelay = documentProfile.largeDocument ? 1200 : 200;
+
+  let pendingSaveContent;
+  let saveTimer;
+  const flushPendingSave = () => {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = undefined;
+    }
+    if (pendingSaveContent === undefined) return;
+    const contentToSave = pendingSaveContent;
+    pendingSaveContent = undefined;
+    handler.emit("save", contentToSave);
+  };
+  const scheduleSave = (nextContent) => {
+    pendingSaveContent = nextContent;
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(flushPendingSave, SAVE_DEBOUNCE_MS);
+  };
+  window.addEventListener('beforeunload', flushPendingSave);
+  window.addEventListener('blur', flushPendingSave);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) flushPendingSave();
+  });
+
   const editor = new Vditor('vditor', {
     value: content,
     cdn: rootPath,
     height: '100%',
     outline: {
+      enable: !documentProfile.largeDocument,
       position: 'left',
     },
     cache: {
@@ -29,6 +81,7 @@ handler.on("open", async (md) => {
     lang: mapVscodeLanguageToVditorLang(language),
     tab: '\t',
     toolbar: await getToolbar(rootPath, () => {
+      flushPendingSave();
       handler.emit('doSave', editor?.getValue());
       editor?.markSaved();
     }),
@@ -37,18 +90,7 @@ handler.on("open", async (md) => {
       if (payload.action !== "dblclick" && !(payload.action === "click" && isCompose)) {
         return;
       }
-      let uri = payload.href;
-      console.log('uri',uri,event.target)
-      if (payload.type === "wikilink" || payload.type === "wikilink-embed") {
-        const hashIndex = uri.indexOf("#");
-        const page = hashIndex < 0 ? uri : uri.slice(0, hashIndex);
-        const fragment = hashIndex < 0 ? "" : uri.slice(hashIndex + 1);
-        if (!page && fragment) {
-          editor.scrollToBlock(fragment);
-          return;
-        }
-        uri = `wiki:${payload.href}`;
-      }
+      const uri = payload.href;
       handler.emit("openLink", uri);
     },
     debugger: isDev,
@@ -71,7 +113,7 @@ handler.on("open", async (md) => {
       handler.emit('editViewerSettings', editor.exportViewerSettings())
     },
     input(content) {
-      handler.emit("save", content)
+      scheduleSave(content)
     },
     upload: {
       url: '/image',
@@ -90,18 +132,24 @@ handler.on("open", async (md) => {
       handler.emit('telemetry', { event, properties });
     },
     preview: {
+      markdown: {
+        codeBlockPreview: !documentProfile.largeDocument || documentProfile.hasMermaid,
+        mathBlockPreview: documentProfile.hasMath,
+      },
       math: {
         macros: markdown?.math?.macros ?? {},
       },
     },
     after() {
-      const { viewerSettings } = md;
-      if (viewerSettings?.enabled) {
-        editor.setViewerSettingsSyncEnabled(true);
-        if (viewerSettings.settings) {
-          editor.applyViewerSettings(viewerSettings.settings);
+      const applyViewerSettingsPayload = (viewerSettings) => {
+        if (viewerSettings?.enabled) {
+          editor.setViewerSettingsSyncEnabled(true);
+          if (viewerSettings.settings) {
+            editor.applyViewerSettings(viewerSettings.settings);
+          }
         }
-      }
+      };
+
       handler.on('viewerSettingsSync', ({ enabled }) => {
         editor.setViewerSettingsSyncEnabled(!!enabled);
       });
@@ -137,10 +185,17 @@ handler.on("open", async (md) => {
           editor.scrollToBlock(fragment);
         }
       })
-      editor.restoreDocumentSession(true)
-      if (pendingFragment) {
-        editor.scrollToBlock(pendingFragment);
-      }
+
+      runAfterFirstPaint(() => {
+        applyViewerSettingsPayload(md.viewerSettings);
+        handler.emit('requestViewerSettings');
+        window.setTimeout(() => {
+          editor.restoreDocumentSession(true)
+          if (pendingFragment) {
+            editor.scrollToBlock(pendingFragment);
+          }
+        }, restoreDelay);
+      });
     }
   })
   bindShortcut(handler, editor);

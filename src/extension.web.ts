@@ -12,8 +12,6 @@ import { OfficeViewerProvider } from './provider/officeViewerProvider';
 import { MarkdownService } from './service/markdownService';
 import { switchCsvEditor } from './service/csvService';
 import { TelemetryService } from './service/telemetryService';
-import { activateXml } from './provider/xml';
-import { activateYaml } from './provider/yaml';
 
 export async function activate(context: vscode.ExtensionContext) {
     setExtensionHostContext();
@@ -21,10 +19,9 @@ export async function activate(context: vscode.ExtensionContext) {
     TelemetryService.init(context);
     FileUtil.init(context);
     ReactApp.init(context);
-    activateYaml(context);
-    activateXml(context);
 
-    const viewOption = { webviewOptions: { retainContextWhenHidden: false } };
+    const markdownViewOption = { webviewOptions: { retainContextWhenHidden: true } };
+    const viewerViewOption = { webviewOptions: { retainContextWhenHidden: false } };
     const markdownService = new MarkdownService(context);
     const markdownEditorProvider = new MarkdownEditorProvider(context, { isWeb: true });
     const viewerInstance = new OfficeViewerProvider(context);
@@ -32,9 +29,9 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('office-lit.markdown.switch', (uri) => { markdownService.switchEditor(uri); }),
         vscode.commands.registerCommand('office-lit.csv.switch', (uri) => { switchCsvEditor(uri); }),
-        vscode.window.registerCustomEditorProvider('mapleinori.markdownViewerLit', markdownEditorProvider, viewOption),
-        vscode.window.registerCustomEditorProvider('mapleinori.markdownPreviewLit', markdownEditorProvider, viewOption),
-        ...viewerInstance.bindCustomEditors(viewOption),
+        vscode.window.registerCustomEditorProvider('mapleinori.markdownViewerLit', markdownEditorProvider, markdownViewOption),
+        vscode.window.registerCustomEditorProvider('mapleinori.markdownPreviewLit', markdownEditorProvider, markdownViewOption),
+        ...viewerInstance.bindCustomEditors(viewerViewOption),
     );
 }
 

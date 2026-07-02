@@ -370,7 +370,7 @@ interface IMath {
     macros?: object;
 }
 
-type ILinkClickType = "link" | "wikilink" | "wikilink-embed" | "image" | "tag" | "footnote-ref" | "link-ref";
+type ILinkClickType = "link" | "image" | "link-ref";
 
 type ILinkClickAction = "click" | "dblclick" | "auxclick";
 
@@ -385,16 +385,10 @@ interface ILinkClickPayload {
 
 /** @link https://ld246.com/article/1549638745630#options-preview-markdown */
 interface IMarkdownConfig {
-    /** 自动空格。默认值: false */
-    autoSpace?: boolean;
     /** 段落开头是否空两格。默认值: false */
     paragraphBeginningSpace?: boolean;
-    /** 自动矫正术语。默认值: false */
-    fixTermTypo?: boolean;
     /** 插入目录。默认值: false */
     toc?: boolean;
-    /** 脚注。默认值: true */
-    footnotes?: boolean;
     /** wysiwyg & ir 模式代码块是否渲染。默认值: true */
     codeBlockPreview?: boolean;
     /** wysiwyg & ir 模式数学公式块是否渲染。默认值: true */
@@ -409,14 +403,6 @@ interface IMarkdownConfig {
     listStyle?: boolean;
     /** 支持 mark 标记 */
     mark?: boolean;
-    /** Obsidian 语法：callout、wikilink、#tag */
-    obsidian?: boolean;
-    /** 单独启用 Obsidian Callout（> [!note]） */
-    callout?: boolean;
-    /** 单独启用 Obsidian Wikilink（[[...]] / ![[...]]） */
-    obsidianWikiLink?: boolean;
-    /** 单独启用 Obsidian 标签（#tag） */
-    obsidianTag?: boolean;
 }
 
 /** @link https://ld246.com/article/1549638745630#options-preview */

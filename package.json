@@ -34,9 +34,7 @@
                              "onCustomEditor:mapleinori.markdownViewerLit",
                              "onCommand:office-lit.markdown.switch",
                              "onCommand:office-lit.csv.switch",
-                             "onCommand:office-lit.markdown.paste",
-                             "onLanguage:yaml",
-                             "onLanguage:xml"
+                             "onCommand:office-lit.markdown.paste"
                          ],
     "main":  "./out/extension.js",
     "browser":  "./out/extension.web.js",

@@ -262,22 +262,8 @@ export const selectIsEditor = (editor: HTMLElement, range?: Range) => {
     return editor.isEqualNode(container) || editor.contains(container);
 };
 
-const getWikilinkSourceElement = (wikilink: HTMLElement): HTMLElement | null => {
-    for (let i = 0; i < wikilink.children.length; i++) {
-        const child = wikilink.children[i];
-        if (!(child instanceof HTMLElement)) {
-            continue;
-        }
-        if (child.classList.contains("vditor-wikilink__source") || child.getAttribute("data-newline") === "1") {
-            return child;
-        }
-    }
-    return null;
-};
 
-const focusInlineNodeTextRange = (range: Range, node: HTMLElement, atEnd: boolean) => {
-    const source = getWikilinkSourceElement(node);
-    const target = source || node;
+const focusInlineNodeTextRange = (range: Range, target: HTMLElement, atEnd: boolean) => {
     let textNode: Text | null = null;
     let lastText: Text | null = null;
     const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
@@ -298,16 +284,6 @@ const focusInlineNodeTextRange = (range: Range, node: HTMLElement, atEnd: boolea
 };
 
 export const focusTableCellContent = (range: Range, cell: HTMLTableCellElement, atEnd: boolean) => {
-    const wikilinks = cell.querySelectorAll('[data-type="wikilink"], [data-type="wikilink-embed"]');
-    if (wikilinks.length === 1) {
-        const wikilink = wikilinks[0] as HTMLElement;
-        const cellText = (cell.textContent || "").replace(/\u200b/g, "").trim();
-        const linkText = (wikilink.textContent || "").replace(/\u200b/g, "").trim();
-        if (cellText === linkText) {
-            focusInlineNodeTextRange(range, wikilink, atEnd);
-            return;
-        }
-    }
     const inlineNode = atEnd
         ? cell.querySelector(".vditor-ir__node:last-of-type")
         : cell.querySelector(".vditor-ir__node:first-of-type");
