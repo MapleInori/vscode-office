@@ -37,7 +37,7 @@ export class TelemetryService {
         if (!this.reporter || !env.isTelemetryEnabled) {
             return false;
         }
-        return workspace.getConfiguration('vscode-office').get<boolean>('enableTelemetry', true);
+        return workspace.getConfiguration('vscode-office-lit').get<boolean>('enableTelemetry', true);
     }
 
     trackViewOpen(viewType: string, fileType?: string, properties?: Record<string, string>): void {
@@ -66,49 +66,12 @@ export class TelemetryService {
         this.trackViewOpen(viewType, fileType || fileTypeFromPath(fsPath));
     }
 
-    trackGitHistoryView(mode: 'repo' | 'file'): void {
-        if (!this.enabled()) {
-            return;
-        }
-        this.reporter!.sendTelemetryEvent('gitHistory.view', { mode });
-    }
-
     trackMarkdownExport(type: 'pdf' | 'html' | 'docx'): void {
         if (!this.enabled()) {
             return;
         }
         this.reporter!.sendTelemetryEvent('markdown.export', { type });
     }
-
-    trackMarkdownSponsorOpen(): void {
-        if (!this.enabled()) {
-            return;
-        }
-        this.reporter!.sendTelemetryEvent('markdown.sponsor.open');
-    }
-
-    trackMarkdownSponsorClick(action: 'logo' | 'site'): void {
-        if (!this.enabled()) {
-            return;
-        }
-        this.reporter!.sendTelemetryEvent('markdown.sponsor.click', { action });
-    }
-
-    trackPreviewSponsorClick(
-        action: 'logo' | 'site',
-        context?: { component?: string; placement?: string; variant?: string },
-    ): void {
-        if (!this.enabled()) {
-            return;
-        }
-        this.reporter!.sendTelemetryEvent('preview.sponsor.click', {
-            action,
-            ...(context?.component ? { component: context.component } : {}),
-            ...(context?.placement ? { placement: context.placement } : {}),
-            ...(context?.variant ? { variant: context.variant } : {}),
-        });
-    }
-
     trackEvent(event: string, properties?: Record<string, string>): void {
         if (!this.enabled()) {
             return;

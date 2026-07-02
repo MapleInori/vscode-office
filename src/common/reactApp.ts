@@ -1,4 +1,3 @@
-import axios from 'axios';
 import * as vscode from 'vscode';
 import { extensionResource, getExtensionUri, readExtensionText } from './extensionResource';
 import { IconService } from '../service/icon/iconService';
@@ -6,7 +5,6 @@ import { IconService } from '../service/icon/iconService';
 interface ViewOption {
     route: string;
     fileName?: string;
-    gitHistoryInit?: import('../gitHistory/util/gitHistoryInitPayload').GitHistoryEmbeddedInit;
 }
 
 export class ReactApp {
@@ -23,23 +21,20 @@ export class ReactApp {
 
     public static async view(webview: vscode.Webview, option: ViewOption) {
         const html = await this.readContent();
+        await IconService.getInstance().init(this.context);
         const iconConfig = IconService.getInstance().getWebviewConfig(this.context, webview);
-        const sponsorBaseUrl = webview.asWebviewUri(
-            extensionResource(this.context, 'resource', 'sponsor')
-        ).toString();
         webview.html = this.buildPath(html, webview)
             .replace(`{{configs}}`, JSON.stringify({
                 ...option,
                 ...iconConfig,
-                sponsorBaseUrl,
                 language: vscode.env.language,
-                config: vscode.workspace.getConfiguration('vscode-office')
+                config: vscode.workspace.getConfiguration('vscode-office-lit')
             }));
     }
 
     private static async readContent(): Promise<string> {
         if (this.IS_DEV) {
-            const data: string = (await axios.get(`http://127.0.0.1:5739/index.html`, { transformResponse: [] })).data;
+            const data = await fetch('http://127.0.0.1:5739/index.html').then(response => response.text());
             return data.replace('/@vite/client', 'http://127.0.0.1:5739/@vite/client');
         }
         return readExtensionText(this.context, 'out', 'webview', 'index.html');

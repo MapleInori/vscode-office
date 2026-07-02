@@ -16,6 +16,7 @@ export interface WebviewIconConfig {
 export class IconService {
     private static instance: IconService;
     private maps: IconMaps | null = null;
+    private initPromise: Promise<void> | null = null;
 
     static getInstance(): IconService {
         if (!IconService.instance) {
@@ -25,9 +26,15 @@ export class IconService {
     }
 
     async init(context: vscode.ExtensionContext): Promise<void> {
-        const raw = await readExtensionText(context, 'theme', 'material-icons.json');
-        const theme = JSON.parse(raw) as MaterialIconThemeJson;
-        this.maps = buildIconMaps(theme);
+        if (this.maps) return;
+        if (!this.initPromise) {
+            this.initPromise = (async () => {
+                const raw = await readExtensionText(context, 'theme', 'material-icons.json');
+                const theme = JSON.parse(raw) as MaterialIconThemeJson;
+                this.maps = buildIconMaps(theme);
+            })();
+        }
+        await this.initPromise;
     }
 
     getMaps(): IconMaps {

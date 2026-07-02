@@ -10,7 +10,6 @@ import { MarkdownService } from '../service/markdownService';
 import { Global, i18n } from '@/common/global';
 import { TelemetryService } from '@/service/telemetryService';
 import { openWikiLink } from '@/service/markdown/wikilink';
-import { streamCustomAI } from '@/service/ai/customAIClient';
 import {
     broadcastToMarkdownWebviews,
     consumePendingBlockScroll,
@@ -21,12 +20,6 @@ import { ViewerSettingsService } from '@/service/viewerSettingsService';
 import { fileTypeFromPath } from '@/service/officeViewType';
 import { parseWebviewResourceUri } from '@/common/webviewUri';
 
-function getRuntimePlatform(): string {
-    if (typeof process !== 'undefined' && process.platform) {
-        return process.platform;
-    }
-    return 'web';
-}
 
 export interface MarkdownEditorProviderOptions {
     isWeb?: boolean;
@@ -49,10 +42,8 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     private static legacyGlobalStatePurged = false;
 
     private countStatus: vscode.StatusBarItem;
-    private aiAbortController: AbortController | null = null;
-    private aiCancellationSource: vscode.CancellationTokenSource | null = null;
 
-    private getMarkdownTelemetryProps(configuration = vscode.workspace.getConfiguration("vscode-office")) {
+    private getMarkdownTelemetryProps(configuration = vscode.workspace.getConfiguration("vscode-office-lit")) {
         return {
             editorTheme: String(configuration.get<string>("editorTheme", "Auto")),
             codeTheme: String(configuration.get<string>("codeMirrorTheme", "Auto")),
@@ -74,11 +65,11 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
         MarkdownEditorProvider.configSyncRegistered = true;
         context.subscriptions.push(
             vscode.workspace.onDidChangeConfiguration((event) => {
-                const config = vscode.workspace.getConfiguration('vscode-office');
+                const config = vscode.workspace.getConfiguration('vscode-office-lit');
                 const patch: Partial<Record<MarkdownSyncConfigKey, unknown>> = {};
                 let changed = false;
                 for (const key of MARKDOWN_SYNC_CONFIG_KEYS) {
-                    if (event.affectsConfiguration(`vscode-office.${key}`)) {
+                    if (event.affectsConfiguration(`vscode-office-lit.${key}`)) {
                         patch[key] = config.get(key);
                         changed = true;
                     }
@@ -188,7 +179,7 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
             // re-parsing on every keystroke (ANTLR token recognition errors in console).
             documentSyncTimer = setTimeout(() => void flushDocumentSync(), 400);
         };
-        const config = vscode.workspace.getConfiguration("vscode-office");
+        const config = vscode.workspace.getConfiguration("vscode-office-lit");
         registerMarkdownWebview(uri, handler);
         handler.panel.onDidDispose(() => {
             void flushDocumentSync();
@@ -308,44 +299,6 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
             new MarkdownService(this.context).exportMarkdown(uri, option)
         }).on('developerTool', () => {
             vscode.commands.executeCommand('workbench.action.toggleDevTools')
-        }).on('openAbout', () => {
-            TelemetryService.get()?.trackMarkdownSponsorOpen();
-        }).on('openSponsor', () => {
-            TelemetryService.get()?.trackMarkdownSponsorClick('logo');
-            vscode.commands.executeCommand(
-                'workbench.extensions.action.showExtensionsWithIds',
-                ['cweijan.vscode-database-client2'],
-            );
-        }).on('openExternal', (url: string) => {
-            if (url) {
-                if (url.includes('database-client.com')) {
-                    TelemetryService.get()?.trackMarkdownSponsorClick('site');
-                }
-                vscode.env.openExternal(vscode.Uri.parse(url));
-            }
-        }).on('queryAIAvailable', () => {
-            void this.notifyAIAvailable(handler);
-        }).on('queryVSCodeModels', async () => {
-            const lm = (vscode as any).lm;
-            if (typeof lm?.selectChatModels !== 'function') {
-                handler.emit('vscodeModels', []);
-                return;
-            }
-            try {
-                const models: any[] = await lm.selectChatModels();
-                handler.emit('vscodeModels', (models ?? []).map((m: any) => ({
-                    id: m.id,
-                    name: m.name,
-                    family: m.family,
-                    vendor: m.vendor,
-                })));
-            } catch {
-                handler.emit('vscodeModels', []);
-            }
-        }).on('aiPolish', async (payload: { markdown: string; options?: any }) => {
-            await this.handleAIPolish(handler, payload.markdown, payload.options);
-        }).on('aiPolishCancel', () => {
-            this.cancelAIPolish();
         }).on('telemetry', (payload: { event: string; properties?: Record<string, string | number | boolean> }) => {
             const properties = {
                 ...this.getMarkdownTelemetryProps(),
@@ -370,114 +323,6 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
             indexHtml.replace("{{baseUrl}}", baseUrl), webview, contextUri
         );
     }
-
-    private cancelAIPolish() {
-        this.aiCancellationSource?.cancel();
-        this.aiAbortController?.abort();
-    }
-
-    private async notifyAIAvailable(handler: Handler) {
-        const lm = (vscode as any).lm;
-        const available = typeof lm?.selectChatModels === 'function';
-        handler.emit('aiAvailable', available);
-    }
-
-    private buildPolishPrompt(markdown: string, options?: any): string {
-        const parts: string[] = [];
-        parts.push('You are a writing assistant.');
-        if (options?.prompt) {
-            parts.push(options.prompt);
-        } else {
-            parts.push('Polish the following Markdown text: improve clarity, fix grammar, and enhance readability.');
-        }
-        if (options?.goal) {
-            parts.push(`Focus on: ${options.goal}`);
-        }
-        parts.push('Return ONLY the polished Markdown with no extra commentary.\n\n' + markdown);
-        return parts.join('\n');
-    }
-
-    private async handleAIPolish(handler: Handler, markdown: string, options?: any) {
-        const engine = options?.engine ?? 'vscode';
-
-        this.cancelAIPolish();
-        this.aiCancellationSource = new vscode.CancellationTokenSource();
-        this.aiAbortController = new AbortController();
-
-        if (engine === 'custom') {
-            await this.handleCustomAIPolish(handler, markdown, options);
-            return;
-        }
-
-        const lm = (vscode as any).lm;
-        if (typeof lm?.selectChatModels !== 'function') {
-            vscode.window.showWarningMessage(i18n('ext.markdown.aiRequiresVscode'));
-            handler.emit('aiPolishResult', markdown);
-            return;
-        }
-        try {
-            let model: any;
-            if (options?.vscodeModelId) {
-                const all: any[] = await lm.selectChatModels();
-                model = all?.find((m: any) => m.id === options.vscodeModelId);
-            }
-            if (!model) {
-                let models: any[] = await lm.selectChatModels({ family: 'gpt-4o' });
-                if (!models || models.length === 0) {
-                    models = await lm.selectChatModels();
-                }
-                if (!models || models.length === 0) {
-                    vscode.window.showWarningMessage(i18n('ext.markdown.noAiModel'));
-                    handler.emit('aiPolishEnd');
-                    return;
-                }
-                model = models[0];
-            }
-            const LanguageModelChatMessage = (vscode as any).LanguageModelChatMessage;
-            const messages = [LanguageModelChatMessage.User(this.buildPolishPrompt(markdown, options))];
-            const token = this.aiCancellationSource.token;
-            const response = await model.sendRequest(messages, {}, token);
-            for await (const chunk of response.text) {
-                if (token.isCancellationRequested) break;
-                handler.emit('aiPolishChunk', chunk);
-            }
-            if (!token.isCancellationRequested) {
-                handler.emit('aiPolishEnd');
-            }
-        } catch (err: any) {
-            if (this.aiCancellationSource?.token.isCancellationRequested) return;
-            vscode.window.showErrorMessage(i18n('ext.markdown.aiPolishFailed', String(err?.message ?? err)));
-            handler.emit('aiPolishEnd');
-        }
-    }
-
-    private async handleCustomAIPolish(handler: Handler, markdown: string, options: any) {
-        const url = options?.customUrl?.trim();
-        if (!url) {
-            vscode.window.showWarningMessage(i18n('ext.markdown.customAiUrlRequired'));
-            handler.emit('aiPolishResult', markdown);
-            return;
-        }
-        try {
-            await streamCustomAI({
-                url,
-                apiKey: options?.customKey?.trim(),
-                model: options?.customModel?.trim(),
-                format: options?.customApiFormat,
-                prompt: this.buildPolishPrompt(markdown, options),
-                signal: this.aiAbortController?.signal,
-                onChunk: (chunk: string) => {
-                    handler.emit('aiPolishChunk', chunk);
-                },
-            });
-            handler.emit('aiPolishEnd');
-        } catch (err: any) {
-            if (err?.name === 'AbortError') return;
-            vscode.window.showErrorMessage(i18n('ext.markdown.customAiPolishFailed', String(err?.message ?? err)));
-            handler.emit('aiPolishEnd');
-        }
-    }
-
     private getMarkdownWebviewConfig(configuration: vscode.WorkspaceConfiguration) {
         const markdownConfiguration = vscode.workspace.getConfiguration("markdown");
         return {

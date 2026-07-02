@@ -66,8 +66,3 @@ export function observeVscodeThemeChange(onChange: () => void): () => void {
     };
 }
 
-export function useVscodeSponsorDark(): boolean {
-    const [dark, setDark] = useState(isVscodeDarkTheme);
-    useEffect(() => observeVscodeThemeChange(() => setDark(isVscodeDarkTheme())), []);
-    return dark;
-}

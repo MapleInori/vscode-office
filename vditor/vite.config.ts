@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync } from "fs";
+import { cpSync, existsSync, mkdirSync, rmSync } from "fs";
 import { resolve } from "path";
 import { defineConfig, type Plugin } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
@@ -25,6 +25,7 @@ function copyBuildToResource(): Plugin {
         resolve(resourceMarkdownDir, "dist"),
         { recursive: true },
       );
+      rmSync(resolve(resourceMarkdownDir, "dist/js/plantuml"), { recursive: true, force: true });
       copyLocalLuteOverride();
     },
   };

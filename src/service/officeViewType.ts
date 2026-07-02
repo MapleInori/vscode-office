@@ -1,21 +1,10 @@
 import { getFileSuffix } from '@/common/fileSuffix';
 
 export function resolveOfficeViewType(fsPath: string, route?: string): string | undefined {
-    if (route) {
-        return route;
-    }
+    if (route) return route;
     const suffix = getFileSuffix(fsPath);
-    switch (suffix) {
-        case '.pdf':
-            return 'pdf';
-        case '.htm':
-        case '.html':
-            return 'html';
-        case '.class':
-            return 'class';
-        default:
-            return undefined;
-    }
+    if (suffix === '.csv' || suffix === '.tsv') return 'csv';
+    return undefined;
 }
 
 export function fileTypeFromPath(fsPath: string): string {

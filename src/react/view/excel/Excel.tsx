@@ -3,12 +3,11 @@ import { App, Button, Modal, Radio, Spin } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { handler, loadDarkMode, applyDarkMode } from "../../util/vscode.ts";
 import { loadOfficeBuffer } from "../../util/loadOfficeContent.ts";
-import SponsorBar from '../components/SponsorBar';
 import './Excel.less';
 import { MIN_VIEW_COLS, MIN_VIEW_ROWS } from "./excel_meta.ts";
 import { detectCsvEncoding } from "./csvEncoding.ts";
 import { loadSheets } from "./excel_reader.ts";
-import { export_xlsx, exportSaveAs, buildFormattingSnapshot, hasFormattingChanged } from "./excel_writer.ts";
+import { export_xlsx, exportSaveAs } from "./excel_writer.ts";
 import Spreadsheet from './x-spreadsheet/index';
 import FindReplacePanel from './FindReplacePanel';
 import { parseSpreadsheetLink } from './excel_hyperlink';
@@ -66,14 +65,13 @@ function ExcelViewer() {
     const [findPanel, setFindPanel] = useState<'find' | 'replace' | null>(null)
     const [loadError, setLoadError] = useState<string | null>(null)
     const [saveAsVisible, setSaveAsVisible] = useState(false)
-    const [saveAsFormat, setSaveAsFormat] = useState('xlsx')
+    const [saveAsFormat, setSaveAsFormat] = useState('csv')
     const extRef = useRef('')
     const documentCacheIdRef = useRef('')
     const readOnlyRef = useRef(false)
     const spreadSheetRef = useRef<Spreadsheet | null>(null)
     const csvEncodingRef = useRef<'utf8' | 'gbk'>('utf8')
     const csvDelimiterRef = useRef(',')
-    const initialFormattingRef = useRef('')
 
     useEffect(() => {
         document.body.classList.toggle('office-dark', dark)
@@ -107,73 +105,6 @@ function ExcelViewer() {
         const sheets = spreadSheet.getData();
         const csvEncoding = csvEncodingRef.current;
         const csvDelimiter = csvDelimiterRef.current;
-
-        if (ext !== 'xlsx' && ext !== 'xlsm' && hasFormattingChanged(initialFormattingRef.current, sheets)) {
-            await new Promise<void>((resolve) => {
-                const dialog = modal.confirm({
-                    title: t('viewer.formatCannotPreserveTitle'),
-                    content: t('viewer.formatCannotPreserveContent', ext.toUpperCase()),
-                    okText: t('viewer.saveAsXlsx'),
-                    cancelText: t('button.cancel'),
-                    centered: true,
-                    getContainer: () => document.body,
-                    onOk: async () => {
-                        try {
-                            await export_xlsx(spreadSheet, 'xlsx', csvEncoding, { saveAs: true }, csvDelimiter);
-                        } catch (error) {
-                            console.error(`Failed to save Excel file: ${(error as Error).message}`);
-                            throw error;
-                        }
-                    },
-                    onCancel: () => { },
-                    footer: () => (
-                        <>
-                            <Button
-                                style={{ padding: '3px 12px', height: 'auto' }}
-                                onClick={() => dialog.destroy()}
-                            >
-                                {t('button.cancel')}
-                            </Button>
-                            <Button
-                                style={{ padding: '3px 12px', height: 'auto' }}
-                                onClick={() => {
-                                    void (async () => {
-                                        dialog.destroy();
-                                        try {
-                                            await export_xlsx(spreadSheet, extRef.current, csvEncoding, undefined, csvDelimiter);
-                                        } catch (error) {
-                                            console.error(`Failed to save Excel file: ${(error as Error).message}`);
-                                        }
-                                    })();
-                                }}
-                            >
-                                {t('viewer.saveAsOriginal')}
-                            </Button>
-                            <Button
-                                type="primary"
-                                style={{ padding: '3px 12px', height: 'auto' }}
-                                onClick={() => {
-                                    handler.emit('telemetry', { event: 'excel.saveAs', properties: { format: 'xlsx' } });
-                                    void (async () => {
-                                        try {
-                                            dialog.destroy();
-                                            await export_xlsx(spreadSheet, 'xlsx', csvEncoding, { saveAs: true }, csvDelimiter);
-                                        } catch (error) {
-                                            console.error(`Failed to save Excel file: ${(error as Error).message}`);
-                                        }
-                                    })();
-                                }}
-                            >
-                                {t('viewer.saveAsXlsx')}
-                            </Button>
-                        </>
-                    ),
-                    afterClose: () => resolve(),
-                });
-            });
-            return;
-        }
-
         try {
             await export_xlsx(spreadSheet, extRef.current, csvEncoding, undefined, csvDelimiter);
             spreadSheet.setSaveEnabled(false);
@@ -283,7 +214,6 @@ function ExcelViewer() {
                     requestAnimationFrame(() => { restoreViewState(spreadSheet, savedView); });
                 });
             }
-            initialFormattingRef.current = buildFormattingSnapshot(spreadSheet.getData());
         };
 
         handler.on("open", (payload) => {
@@ -383,10 +313,8 @@ function ExcelViewer() {
                         style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
                     >
                         {[
-                            { value: 'xlsx', label: t('viewer.exportXlsxLabel'), desc: t('viewer.exportXlsxDesc') },
                             { value: 'csv', label: t('viewer.exportCsvLabel'), desc: t('viewer.exportCsvDesc') },
-                            { value: 'xls', label: t('viewer.exportXlsLabel'), desc: t('viewer.exportXlsDesc') },
-                            { value: 'ods', label: t('viewer.exportOdsLabel'), desc: t('viewer.exportOdsDesc') },
+                            { value: 'tsv', label: 'TSV', desc: 'Tab-delimited text file' },
                         ].map(f => (
                             <Radio key={f.value} value={f.value} style={{ alignItems: 'flex-start' }}>
                                 <span style={{ fontWeight: 500 }}>{f.label}</span>
@@ -406,7 +334,6 @@ function ExcelViewer() {
                 >
                     {dark ? <SunOutlined /> : <MoonOutlined />}
                 </button>
-                {!loading && <SponsorBar placement="right" />}
             </div>
         </div>
     )

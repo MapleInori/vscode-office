@@ -55,7 +55,6 @@ export async function getToolbar(resPath, onSave = null) {
         "redo",
         "|",
         "find",
-        "ai-settings",
         "settings",
         "help",
     ]
@@ -161,9 +160,6 @@ const copyPlainText = async (text) => {
     textarea.remove()
 }
 
-export const setAIAvailable = (available, editor) => {
-    editor?.setCopilotAvailable?.(available);
-}
 
 export const createContextMenu = (editor) => {
     const menu = document.getElementById('context-menu')
@@ -206,7 +202,7 @@ export const createContextMenu = (editor) => {
             case 'paste':
                 handler.emit('telemetry', { event: 'markdown.paste' })
                 if (document.getSelection()?.toString()) { document.execCommand('delete') }
-                vscodeEvent.emit('command', 'office.markdown.paste')
+                vscodeEvent.emit('command', 'office-lit.markdown.paste')
                 break
             case 'exportPdf':
                 vscodeEvent.emit('export', { type: 'pdf' })
@@ -225,9 +221,6 @@ export const createContextMenu = (editor) => {
                 break
             case 'insertImage':
                 vscodeEvent.emit('insertImage')
-                break
-            case 'aiPolish':
-                editor.openAIPolishDialog()
                 break
         }
     })

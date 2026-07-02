@@ -1,5 +1,5 @@
 import { FormattingOptions } from 'vscode';
-import { PrettyData, pd } from '../../http/utils/pretty-data';
+import { PrettyData, pd } from './pretty-data';
 
 function getIndentStep(options?: FormattingOptions): string {
     if (options?.insertSpaces === false) {
@@ -16,3 +16,4 @@ export function formatXml(text: string, options?: FormattingOptions): string {
     const formatter = step === '  ' ? pd : new PrettyData(step);
     return formatter.xml(text);
 }
+
