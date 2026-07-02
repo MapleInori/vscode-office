@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { extensionResource, getExtensionUri, readExtensionText } from './extensionResource';
-import { IconService } from '../service/icon/iconService';
 
 interface ViewOption {
     route: string;
@@ -21,12 +20,9 @@ export class ReactApp {
 
     public static async view(webview: vscode.Webview, option: ViewOption) {
         const html = await this.readContent();
-        await IconService.getInstance().init(this.context);
-        const iconConfig = IconService.getInstance().getWebviewConfig(this.context, webview);
         webview.html = this.buildPath(html, webview)
             .replace(`{{configs}}`, JSON.stringify({
                 ...option,
-                ...iconConfig,
                 language: vscode.env.language,
                 config: vscode.workspace.getConfiguration('vscode-office-lit')
             }));

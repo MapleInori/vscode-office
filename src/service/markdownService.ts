@@ -1,14 +1,11 @@
 import { adjustImgPath } from "@/common/fileUtil";
 import { Output } from "@/common/Output";
 import { spawn } from 'child_process';
-import chromeFinder from 'chrome-finder';
-import { fileTypeFromFile } from 'file-type';
 import { copyFileSync, existsSync, lstatSync, mkdirSync, renameSync } from 'fs';
 import { homedir } from 'os';
 import path, { dirname, extname, isAbsolute, join, parse } from 'path';
 import * as vscode from 'vscode';
 import { Holder } from './markdown/holder';
-import { convertMd } from "./markdown/markdown-pdf";
 import { Global, i18n } from "@/common/global";
 import { TelemetryService } from "./telemetryService";
 
@@ -35,6 +32,7 @@ export class MarkdownService {
             if (type != 'html') { // html导出速度快, 无需等待
                 vscode.window.showInformationMessage(i18n('ext.markdown.exportStart', type))
             }
+            const { convertMd } = await import("./markdown/markdown-pdf");
             await convertMd({ markdownFilePath: uri.fsPath, config: this.getConfig(option) })
             vscode.window.showInformationMessage(i18n('ext.markdown.exportSuccess', type))
         } catch (error) {
@@ -111,6 +109,7 @@ export class MarkdownService {
             }
         }
         try {
+            const chromeFinder = require('chrome-finder') as () => string;
             const chromePath = chromeFinder();
             console.debug(`using chrome path is ${chromePath}`)
             return chromePath;
@@ -166,6 +165,7 @@ export class MarkdownService {
 
     public static async imgExtGuide(absPath: string, relPath: string) {
         const oldExt = extname(absPath)
+        const { fileTypeFromFile } = await import('file-type');
         const { ext = "png" } = (await fileTypeFromFile(absPath)) ?? {};
         if (oldExt != `.${ext}`) {
             relPath = relPath.replace(oldExt, `.${ext}`)

@@ -46,14 +46,6 @@
                                            "path":  "./theme/onedark-modern.json"
                                        }
                                    ],
-                        "iconThemes":  [
-                                           {
-                                               "id":  "office-lit-material-icon-theme",
-                                               "label":  "Material Icon Theme (Office Viewer Lit)",
-                                               "path":  "./theme/material-icons.json",
-                                               "_watch":  true
-                                           }
-                                       ],
                         "languages":  [
                                           {
                                               "id":  "nginx",
