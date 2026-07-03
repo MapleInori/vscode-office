@@ -4,15 +4,12 @@
 
 ## 介绍
 
-本扩展支持在 VS Code 中预览以下常见的办公文件格式：
+本扩展专注于在 VS Code 中轻量编辑 Markdown 和 CSV/TSV 文件：
 
-- Excel: `.xls`、`.xlsx`、`.xlsm`、`.csv`、`.ods`
-- Word: `.docx`、`.dotx`
-- PDF: `.pdf`
-- SVG: `.svg`
-- 字体: `.ttf`、`.otf`、`.woff`、`.woff2`
 - Markdown: `.md`、`.markdown`
-- HTML: `.html`、`.htm`
+- CSV/TSV: `.csv`、`.tsv`
+
+本扩展不再提供 PDF、DOCX、HTML、SVG 或字体文件的自定义预览/编辑器。
 
 ## Markdown
 
@@ -29,7 +26,7 @@
 }
 ```
 
-在编辑器中右键，可将 Markdown 导出为 PDF、DOCX 或 HTML。PDF 导出依赖 Chromium，可通过 `vscode-office.chromiumPath` 配置浏览器路径。
+在编辑器中右键，可将 Markdown 导出为 PDF、DOCX 或 HTML。PDF 导出依赖 Chromium，可通过 `vscode-office-lit.chromiumPath` 配置浏览器路径。
 
 ![导出 Markdown](image/README-CN/1685418034035.png)
 
@@ -41,10 +38,8 @@
 
 ## 其他功能
 
-- HTML: 编辑时按下 `Ctrl+Shift+V` 可实时预览
-- YAML: 支持文档大纲与锚点导航（别名引用可跳转到定义）
-- 图标主题: 内置 [Material Icon Theme](https://github.com/PKief/vscode-material-icon-theme) 部分图标，并提供 **Office Material Icon Theme** 与 **One Dark Modern** 配色主题
-- Excel: 支持预览和保存 `.xlsx`、`.xls`、`.xlsm`、`.csv`、`.ods` 等文件（注意保存 `.xlsx` 可能丢失格式；`.csv` 不支持 GBK 编码的中文）
+- CSV/TSV: 支持预览和保存分隔符文本文件。
+- 主题: 提供 **One Dark Modern** 配色主题。
 
 ## Sponsor
 
@@ -69,7 +64,7 @@ npm install
 
 ### 开发调试
 
-**桌面端扩展**（完整功能）：
+**桌面端扩展**：
 
 ```bash
 npm run dev
@@ -77,7 +72,7 @@ npm run dev
 
 在 VS Code 中按 `F5`，或在「运行和调试」中选择 **Extension**。
 
-**Web 端扩展**（浏览器中的 Markdown、HTML、YAML）：
+**Web 端扩展**：
 
 ```bash
 npm run dev:web
@@ -92,38 +87,7 @@ npm run build    # 生产构建
 npm run package  # 生成 .vsix
 ```
 
-## 使用数据（Usage Data）
-
-Office Viewer 会收集**匿名使用数据**，用于了解各预览功能的使用情况，以便改进扩展。数据通过官方模块 [`@vscode/extension-telemetry`](https://www.npmjs.com/package/@vscode/extension-telemetry) 发送至 [Azure Application Insights](https://learn.microsoft.com/zh-cn/azure/azure-monitor/app/app-insights-overview)。
-
-### 收集内容
-
-| 事件 | 触发时机 | 属性 |
-|------|---------|------|
-| `view.open` | 打开自定义预览/编辑器 | `viewType`（如 `excel`、`markdown`、`pdf`）、`fileType`（仅扩展名，如 `xlsx`、`md`） |
-| `markdown.export` | 从编辑器右键菜单导出 Markdown | `type`：`pdf`、`html` 或 `docx` |
-
-**不会**收集文件路径、文件名、URL、仓库名、请求内容或其他可识别个人身份的信息。
-
-### 如何关闭
-
-仅在以下**两项均允许**时才会上报：
-
-1. VS Code 全局遥测已开启（`telemetry.telemetryLevel` 不为 `off`，或旧版中 `telemetry.enableTelemetry` 为 `true`）。
-2. 扩展遥测已开启：在设置中将 `vscode-office.enableTelemetry` 设为 `false` 可单独关闭本扩展的上报。
-
-也可在 **设置 → 应用程序 → 遥测** 中关闭 VS Code 的全部遥测。
-
-### 维护者配置
-
-若自行构建并发布本扩展，请参阅 [docs/telemetry.md](docs/telemetry.md) 配置 Azure Application Insights 及示例查询。
-
 ## Credits
 
-- PDF rendering: [mozilla/pdf.js](https://github.com/mozilla/pdf.js/)
-- DOCX rendering: [VolodymyrBaydalka/docxjs](https://github.com/VolodymyrBaydalka/docxjs)
-- XLSX rendering:
-  - [SheetJS/sheetjs](https://github.com/SheetJS/sheetjs): XLSX parsing
-  - [myliang/x-spreadsheet](https://github.com/myliang/x-spreadsheet): XLSX rendering
+- Spreadsheet UI: [myliang/x-spreadsheet](https://github.com/myliang/x-spreadsheet)
 - Markdown: [Vanessa219/vditor](https://github.com/Vanessa219/vditor)
-- Material Icon theme: [PKief/vscode-material-icon-theme](https://github.com/PKief/vscode-material-icon-theme)

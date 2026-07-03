@@ -3,7 +3,6 @@ import { getFileSuffix } from '@/common/fileSuffix';
 import * as vscode from 'vscode';
 import { Handler } from '../common/handler';
 import { handleCommonEvent } from './compress/commonHandler';
-import { TelemetryService } from '@/service/telemetryService';
 import { getExtensionResourceRoots } from '@/common/extensionResource';
 
 /** CSV/TSV custom editor. */
@@ -38,7 +37,6 @@ export class OfficeViewerProvider implements vscode.CustomReadonlyEditorProvider
 
         const handler = Handler.bind(webviewPanel, uri);
         handleCommonEvent(uri, handler);
-        TelemetryService.get()?.trackOfficeViewOpen(uri.fsPath, 'csv', suffix.slice(1));
         return ReactApp.view(webview, { route: 'excel' });
     }
 

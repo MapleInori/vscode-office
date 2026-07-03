@@ -8,7 +8,6 @@ import { Util } from '../common/util';
 import { Holder } from '../service/markdown/holder';
 import { MarkdownService } from '../service/markdownService';
 import { Global, i18n } from '@/common/global';
-import { TelemetryService } from '@/service/telemetryService';
 import {
     broadcastToMarkdownWebviews,
     consumePendingBlockScroll,
@@ -16,7 +15,6 @@ import {
     unregisterMarkdownWebview,
 } from '@/service/markdown/blockScroll';
 import { ViewerSettingsService } from '@/service/viewerSettingsService';
-import { fileTypeFromPath } from '@/service/officeViewType';
 import { parseWebviewResourceUri } from '@/common/webviewUri';
 
 
@@ -41,13 +39,6 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     private static legacyGlobalStatePurged = false;
 
     private countStatus: vscode.StatusBarItem;
-
-    private getMarkdownTelemetryProps(configuration = vscode.workspace.getConfiguration("vscode-office-lit")) {
-        return {
-            editorTheme: String(configuration.get<string>("editorTheme", "Auto")),
-            codeTheme: String(configuration.get<string>("codeMirrorTheme", "Auto")),
-        };
-    }
 
     constructor(
         private context: vscode.ExtensionContext, private options: MarkdownEditorProviderOptions = {}
@@ -122,11 +113,6 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
             ],
         }
         const handler = Handler.bind(webviewPanel, uri);
-        TelemetryService.get()?.trackViewOpen(
-            'markdown',
-            fileTypeFromPath(uri.fsPath),
-            this.getMarkdownTelemetryProps(),
-        );
         void this.handleMarkdown(document, handler, folderPath);
         handler.on('developerTool', () => vscode.commands.executeCommand('workbench.action.toggleDevTools'))
     }
@@ -277,7 +263,6 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
             vscode.env.clipboard.writeText(`![${fileName}](${adjustRelPath})`);
             vscode.commands.executeCommand("editor.action.clipboardPasteAction");
         }).on("editInVSCode", (full: boolean) => {
-            TelemetryService.get()?.trackEvent('markdown.editInVSCode', { full: full ? 'true' : 'false' });
             const side = full ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside;
             vscode.commands.executeCommand('vscode.openWith', uri, "default", side);
         }).on("showInFolder", () => {
@@ -299,14 +284,6 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
             new MarkdownService(this.context).exportMarkdown(uri, option)
         }).on('developerTool', () => {
             vscode.commands.executeCommand('workbench.action.toggleDevTools')
-        }).on('telemetry', (payload: { event: string; properties?: Record<string, string | number | boolean> }) => {
-            const properties = {
-                ...this.getMarkdownTelemetryProps(),
-                ...Object.fromEntries(
-                    Object.entries(payload.properties ?? {}).map(([key, value]) => [key, String(value)]),
-                ),
-            };
-            TelemetryService.get()?.trackEvent(payload.event, properties);
         }).on('syncViewerSettings', async (settings) => {
             if (await ViewerSettingsService.exists()) {
                 await ViewerSettingsService.writeFromVditor(settings);

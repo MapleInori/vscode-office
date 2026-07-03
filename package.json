@@ -11,10 +11,7 @@
     "keywords":  [
                      "csv",
                      "tsv",
-                     "markdown",
-                     "toml",
-                     "yaml",
-                     "xml"
+                     "markdown"
                  ],
     "categories":  [
                        "Visualization",
@@ -47,89 +44,10 @@
                                        }
                                    ],
                         "languages":  [
-                                          {
-                                              "id":  "nginx",
-                                              "aliases":  [
-                                                              "NGINX Conf",
-                                                              "NGINX",
-                                                              "nginx"
-                                                          ],
-                                              "extensions":  [
-                                                                 ".conf",
-                                                                 ".conf.default",
-                                                                 ".conf.template",
-                                                                 "mime.types",
-                                                                 "fastcgi_params",
-                                                                 "scgi_params",
-                                                                 "uwsgi_params",
-                                                                 "nginx.conf",
-                                                                 ".nginx"
-                                                             ],
-                                              "configuration":  "./syntaxes/nginx.configuration.json"
-                                          },
-                                          {
-                                              "id":  "kotlin",
-                                              "aliases":  [
-                                                              "Kotlin"
-                                                          ],
-                                              "extensions":  [
-                                                                 ".kt",
-                                                                 ".kts"
-                                                             ],
-                                              "configuration":  "./syntaxes/kotlin-language-configuration.json"
-                                          },
-                                          {
-                                              "id":  "toml",
-                                              "aliases":  [
-                                                              "TOML",
-                                                              "Toml",
-                                                              "toml"
-                                                          ],
-                                              "extensions":  [
-                                                                 ".toml"
-                                                             ],
-                                              "configuration":  "./syntaxes/toml-language-configuration.json"
-                                          },
-                                          {
-                                              "id":  "kusto",
-                                              "aliases":  [
-                                                              "Kusto",
-                                                              "kusto",
-                                                              "KQL",
-                                                              "kql"
-                                                          ],
-                                              "extensions":  [
-                                                                 ".csl",
-                                                                 ".kusto",
-                                                                 ".kql"
-                                                             ],
-                                              "configuration":  "./syntaxes/kusto-language-configuration.json"
-                                          }
+
                                       ],
                         "grammars":  [
-                                         {
-                                             "language":  "nginx",
-                                             "scopeName":  "source.nginx",
-                                             "path":  "./syntaxes/nginx.tmLanguage",
-                                             "embeddedLanguages":  {
-                                                                       "meta.embedded.block.lua":  "lua"
-                                                                   }
-                                         },
-                                         {
-                                             "language":  "kotlin",
-                                             "scopeName":  "source.kotlin",
-                                             "path":  "./syntaxes/kotlin.tmLanguage.json"
-                                         },
-                                         {
-                                             "language":  "toml",
-                                             "scopeName":  "source.toml",
-                                             "path":  "./syntaxes/toml.tmLanguage.json"
-                                         },
-                                         {
-                                             "language":  "kusto",
-                                             "scopeName":  "source.kusto",
-                                             "path":  "./syntaxes/kusto.tmLanguage.json"
-                                         }
+
                                      ],
                         "snippets":  [
 
@@ -313,21 +231,6 @@
                                                                                                             "description":  "Printed pdf default top margin."
                                                                                                         }
                                                                  }
-                                              },
-                                              {
-                                                  "title":  "Telemetry",
-                                                  "order":  99,
-                                                  "properties":  {
-                                                                     "vscode-office-lit.enableTelemetry":  {
-                                                                                                               "type":  "boolean",
-                                                                                                               "default":  false,
-                                                                                                               "tags":  [
-                                                                                                                            "telemetry",
-                                                                                                                            "usesOnlineServices"
-                                                                                                                        ],
-                                                                                                               "markdownDescription":  "Enable anonymous usage data collection for Office Viewer Lit. This respects VS Code global telemetry settings (`#telemetry.telemetryLevel#`)."
-                                                                                                           }
-                                                                 }
                                               }
                                           ]
                     },
@@ -373,7 +276,6 @@
                          "@codemirror/view":  "^6.43.1",
                          "@lezer/highlight":  "^1.2.3",
                          "@vscode/codicons":  "^0.0.45",
-                         "@vscode/extension-telemetry":  "^1.5.2",
                          "antd":  "^5.15.4",
                          "buffer":  "^6.0.3",
                          "chart.js":  "^4.5.1",
@@ -409,7 +311,6 @@
                          "udsv":  "^0.5.3",
                          "vscode-html-to-docx":  "^1.1.2",
                          "yaml":  "^2.9.0",
-                         "file-type":  "^21.0.0",
-                         "save-svg-as-png":  "^1.4.17"
+                         "file-type":  "^21.0.0"
                      }
 }

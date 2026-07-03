@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { Global } from './common/global';
-import { TelemetryService } from './service/telemetryService';
 import { MarkdownEditorProvider } from './provider/markdownEditorProvider';
 import { OfficeViewerProvider } from './provider/officeViewerProvider';
 import { MarkdownService } from './service/markdownService';
@@ -10,7 +9,6 @@ import { ReactApp } from './common/reactApp';
 
 export async function activate(context: vscode.ExtensionContext) {
     await Global.init(context);
-    TelemetryService.init(context);
     const markdownViewOption = { webviewOptions: { retainContextWhenHidden: true } };
     const viewerViewOption = { webviewOptions: { retainContextWhenHidden: false } };
     FileUtil.init(context);

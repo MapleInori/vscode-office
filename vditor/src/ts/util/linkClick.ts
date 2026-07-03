@@ -50,9 +50,6 @@ export const resolveLinkClickFromTarget = (
     if (isInsideCodeMirror(target) || isInsideCodeBlockChrome(target)) {
         return null;
     }
-    if (target.closest(".vditor-ai-dialog-overlay")) {
-        return null;
-    }
     const linkRef = hasClosestByAttribute(target, "data-type", "link-ref");
     if (linkRef) {
         const label = linkRef.getAttribute("data-link-label") || linkRef.textContent?.trim() || "";

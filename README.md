@@ -4,15 +4,12 @@ English | [简体中文](README-CN.md) | [繁體中文](README-TW.md)
 
 ## Introduction
 
-This extension lets you preview and edit common office files directly in VS Code.
+This extension focuses on lightweight Markdown and CSV/TSV editing directly in VS Code.
 
-- Excel: `.xls`, `.xlsx`, `.xlsm`, `.csv`, `.ods`
-- Word: `.docx`, `.dotx`
-- PDF: `.pdf`
-- SVG: `.svg`
-- Font: `.ttf`, `.otf`, `.woff`, `.woff2`
 - Markdown: `.md`, `.markdown`
-- HTML: `.html`, `.htm`
+- CSV/TSV: `.csv`, `.tsv`
+
+It does not provide custom preview/editors for PDF, DOCX, HTML, SVG, or font files.
 
 ## Markdown
 
@@ -29,7 +26,7 @@ To use the built-in VS Code Markdown editor instead, add this to your `settings.
 }
 ```
 
-Right-click in the editor to export Markdown to PDF, DOCX, or HTML. PDF export requires Chromium; set the browser path with `vscode-office.chromiumPath`.
+Right-click in the editor to export Markdown to PDF, DOCX, or HTML. PDF export requires Chromium; set the browser path with `vscode-office-lit.chromiumPath`.
 
 ![Export Markdown](image/README-CN/1685418034035.png)
 
@@ -43,10 +40,8 @@ Long code blocks are capped (default 400px) with an **expand/collapse** button t
 
 ## Other features
 
-- HTML: live preview while editing; press `Ctrl+Shift+V` to open the live view
-- YAML: document outline and anchor navigation (Go to Definition for alias references)
-- Icon theme: includes a subset of [Material Icon Theme](https://github.com/PKief/vscode-material-icon-theme) icons, plus **Office Material Icon Theme** and **One Dark Modern** color themes
-- Excel: preview and save `.xlsx`, `.xls`, `.xlsm`, `.csv`, and `.ods` files (saving `.xlsx` may lose formatting; `.csv` does not support GBK-encoded Chinese)
+- CSV/TSV: preview and save delimited text files.
+- Theme: includes the **One Dark Modern** color theme.
 
 ## Sponsor
 
@@ -71,7 +66,7 @@ npm install
 
 ### Development
 
-**Desktop extension** (full feature set):
+**Desktop extension**:
 
 ```bash
 npm run dev
@@ -79,7 +74,7 @@ npm run dev
 
 Press `F5` in VS Code, or choose **Extension** from Run and Debug.
 
-**Web extension** (Markdown, HTML, YAML in the browser):
+**Web extension**:
 
 ```bash
 npm run dev:web
@@ -94,38 +89,7 @@ npm run build    # production build
 npm run package  # create .vsix
 ```
 
-## Usage data
-
-Office Viewer collects **anonymous usage data** to understand which preview features are used, so we can improve the extension. Data is sent to [Azure Application Insights](https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview) via the official [`@vscode/extension-telemetry`](https://www.npmjs.com/package/@vscode/extension-telemetry) module.
-
-### What we collect
-
-| Event | When | Properties |
-|-------|------|------------|
-| `view.open` | A custom preview/editor is opened | `viewType` (e.g. `excel`, `markdown`, `pdf`), `fileType` (extension only, e.g. `xlsx`, `md`) |
-| `markdown.export` | Markdown is exported from the editor context menu | `type`: `pdf`, `html`, or `docx` |
-
-We **do not** collect file paths, file names, URLs, repository names, request contents, or other personally identifiable information.
-
-### How to opt out
-
-Telemetry is sent only when **both** of the following allow it:
-
-1. VS Code global telemetry is enabled (`telemetry.telemetryLevel` is not `off`, or `telemetry.enableTelemetry` is `true` on older versions).
-2. Extension telemetry is enabled: set `vscode-office.enableTelemetry` to `false` in Settings.
-
-You can also disable all VS Code telemetry in **Settings → Application → Telemetry**.
-
-### Maintainer setup
-
-If you build and publish this extension yourself, see [docs/telemetry.md](docs/telemetry.md) for Azure Application Insights setup and sample queries.
-
 ## Credits
 
-- PDF rendering: [mozilla/pdf.js](https://github.com/mozilla/pdf.js/)
-- DOCX rendering: [VolodymyrBaydalka/docxjs](https://github.com/VolodymyrBaydalka/docxjs)
-- XLSX rendering:
-  - [SheetJS/sheetjs](https://github.com/SheetJS/sheetjs): XLSX parsing
-  - [myliang/x-spreadsheet](https://github.com/myliang/x-spreadsheet): XLSX rendering
+- Spreadsheet UI: [myliang/x-spreadsheet](https://github.com/myliang/x-spreadsheet)
 - Markdown: [Vanessa219/vditor](https://github.com/Vanessa219/vditor)
-- Material Icon theme: [PKief/vscode-material-icon-theme](https://github.com/PKief/vscode-material-icon-theme)

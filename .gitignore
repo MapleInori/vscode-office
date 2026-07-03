@@ -1,6 +1,7 @@
 out/
 dist/
 node_modules    
+.npm-cache/
 .vscode-test/
 .idea/
 *.vsix

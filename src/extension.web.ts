@@ -11,12 +11,10 @@ import { MarkdownEditorProvider } from './provider/markdownEditorProvider';
 import { OfficeViewerProvider } from './provider/officeViewerProvider';
 import { MarkdownService } from './service/markdownService';
 import { switchCsvEditor } from './service/csvService';
-import { TelemetryService } from './service/telemetryService';
 
 export async function activate(context: vscode.ExtensionContext) {
     setExtensionHostContext();
     await Global.init(context);
-    TelemetryService.init(context);
     FileUtil.init(context);
     ReactApp.init(context);
 

@@ -20,9 +20,6 @@ import { Tip } from "./ts/tip/index";
 import { Toolbar } from "./ts/toolbar/index";
 import { disableToolbar, hidePanel } from "./ts/toolbar/setToolbar";
 import { enableToolbar } from "./ts/toolbar/setToolbar";
-import { AIDialog } from "./ts/ui/aiDialog";
-import { telemetry } from "./ts/util/telemetry";
-import { AIResultPanel } from "./ts/ui/aiResultPanel";
 import { initUI } from "./ts/ui/initUI";
 import { setCodeTheme } from "./ts/ui/setCodeTheme";
 import { setEditorTheme as applyEditorTheme } from "./ts/ui/setEditorTheme";
@@ -39,12 +36,6 @@ import { getSelectText } from "./ts/util/getSelectText";
 import { Options } from "./ts/util/Options";
 import { processCodeRender } from "./ts/util/processCode";
 import { getCursorPosition, getEditorRange } from "./ts/util/selection";
-import {
-    captureEditorSelection,
-    hideFrozenSelection,
-    restoreEditorSelection,
-    showFrozenSelection,
-} from "./ts/util/frozenSelection";
 import { afterRenderEvent } from "./ts/wysiwyg/afterRenderEvent";
 import { renderToc } from "./ts/util/toc";
 import { scrollToBlock as scrollToBlockUtil } from "./ts/util/scrollToBlock";
@@ -61,7 +52,6 @@ import {
 import { exportExportSettings, ExportThemeSettings } from "./ts/util/exportThemeSettings";
 import {
     buildSettingsPanelHTML,
-    refreshAISettingsToolbarPanel,
     refreshSettingsToolbarPanel,
 } from "./ts/ui/settingsPanel";
 import { WYSIWYG } from "./ts/wysiwyg/index";
@@ -82,11 +72,6 @@ class Vditor {
 
     public readonly version: string;
     public vditor: IVditor;
-    private aiDialog: AIDialog | null = null;
-    private aiSelectionRange: Range | null = null;
-    private aiSelectionRect: DOMRect | null = null;
-    private aiResultPanel: AIResultPanel = new AIResultPanel();
-    private aiReplaceAll = false;
 
     /**
      * @param id 要挂载 Vditor 的元素或者元素 ID。
@@ -393,16 +378,6 @@ class Vditor {
         this.vditor.undo.addToUndoStack(this.vditor);
     }
 
-    /** 设置 Github Copilot（VS Code Language Model API）是否可选 */
-    public setCopilotAvailable(available: boolean) {
-        this.aiDialog?.setCopilotAvailable(available);
-    }
-
-    /** 设置可用的 VS Code 语言模型列表 */
-    public setVSCodeModels(models: Array<{ id: string; name: string; family: string; vendor: string }>) {
-        this.aiDialog?.setVSCodeModels(models);
-    }
-
     /** 启用或禁用配置文件同步 */
     public setViewerSettingsSyncEnabled(enabled: boolean) {
         enableViewerSettingsSync(enabled);
@@ -431,78 +406,6 @@ class Vditor {
             panelElement.innerHTML = buildSettingsPanelHTML(this.vditor);
         }
         refreshSettingsToolbarPanel(this.vditor);
-        refreshAISettingsToolbarPanel(this.vditor);
-    }
-
-    /** 打开 AI 润色弹窗，由外部（右键菜单等）调用 */
-    public openAIPolishDialog() {
-        if (!this.aiDialog) { return; }
-        const sel = this.getSelection();
-        this.aiSelectionRange = captureEditorSelection(this.vditor);
-        if (this.aiSelectionRange) {
-            this.aiSelectionRect = this.aiSelectionRange.getBoundingClientRect();
-            showFrozenSelection(this.vditor, this.aiSelectionRange);
-        } else {
-            this.aiSelectionRect = null;
-        }
-        this.aiDialog.open(sel || this.getValue(), !!sel);
-    }
-
-    /** 触发 AI 润色。capturedMarkdown/isSelection 由调用方在失焦前预先捕获，避免选区丢失 */
-    public triggerAIPolish(options?: IAIPolishOptions, capturedMarkdown?: string, isSelection?: boolean) {
-        const onPolish = this.vditor.options.ai?.onPolish;
-        if (!onPolish) { return; }
-        const replaceAll = isSelection !== undefined ? !isSelection : !this.getSelection();
-        this.aiReplaceAll = replaceAll;
-        const markdown = capturedMarkdown ?? (this.getSelection() || this.getValue());
-        this.disabled();
-        const discardOrCancel = (cancel = false) => {
-            this.enable();
-            hideFrozenSelection(this.vditor);
-            this.aiSelectionRange = null;
-            this.aiSelectionRect = null;
-            if (cancel) this.vditor.options.ai?.onCancelPolish?.();
-        };
-        this.aiResultPanel.open(
-            markdown,
-            this.aiSelectionRect,
-            (result) => this.applyAIResult(result, this.aiReplaceAll),
-            () => discardOrCancel(false),
-            () => discardOrCancel(true),
-        );
-        telemetry(this.vditor, "markdown.ai.polish", {
-            engine: options?.engine ?? "vscode",
-            isSelection: !replaceAll,
-        });
-        onPolish(markdown, (_result: string) => { /* unused — streaming via streamAIChunk/endAIStream */ }, options);
-    }
-
-    /** 流式接收 AI chunk，实时渲染到结果面板 */
-    public streamAIChunk(chunk: string) {
-        this.aiResultPanel.stream(chunk);
-    }
-
-    /** AI 流结束，启用确认按钮 */
-    public endAIStream() {
-        this.aiResultPanel.endStream();
-    }
-
-    /** 接收 AI 润色结果：退出 loading 状态，将 markdown 并入正文 */
-    public applyAIResult(markdown: string, replaceAll = false) {
-        this.enable();
-        hideFrozenSelection(this.vditor);
-        if (replaceAll) {
-            this.aiSelectionRange = null;
-            this.aiSelectionRect = null;
-            this.setValue(markdown);
-        } else {
-            restoreEditorSelection(this.vditor, this.aiSelectionRange);
-            this.aiSelectionRange = null;
-            this.aiSelectionRect = null;
-            document.execCommand("delete", false);
-            const html = this.vditor.lute.Md2HTML(markdown);
-            document.execCommand("insertHTML", false, html);
-        }
     }
 
     /** 销毁编辑器 */
@@ -563,17 +466,6 @@ class Vditor {
             });
 
             initUI(this.vditor);
-
-            if (mergedOptions.ai?.onPolish) {
-                this.aiDialog = new AIDialog(this.vditor, (markdown, isSelection, options) => {
-                    this.triggerAIPolish(options, markdown, isSelection);
-                }, (reason) => {
-                    hideFrozenSelection(this.vditor);
-                    if (reason !== "submit") {
-                        this.aiSelectionRange = null;
-                    }
-                });
-            }
 
             if (mergedOptions.after) {
                 mergedOptions.after();

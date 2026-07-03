@@ -4,15 +4,12 @@
 
 ## 介紹
 
-本擴充功能支援在 VS Code 中預覽以下常見的辦公檔案格式：
+本擴充功能專注於在 VS Code 中輕量編輯 Markdown 和 CSV/TSV 檔案：
 
-- Excel: `.xls`、`.xlsx`、`.xlsm`、`.csv`、`.ods`
-- Word: `.docx`、`.dotx`
-- PDF: `.pdf`
-- SVG: `.svg`
-- 字型: `.ttf`、`.otf`、`.woff`、`.woff2`
 - Markdown: `.md`、`.markdown`
-- HTML: `.html`、`.htm`
+- CSV/TSV: `.csv`、`.tsv`
+
+本擴充功能不再提供 PDF、DOCX、HTML、SVG 或字型檔案的自訂預覽/編輯器。
 
 ## Markdown
 
@@ -29,7 +26,7 @@
 }
 ```
 
-在編輯器中按右鍵，可將 Markdown 匯出為 PDF、DOCX 或 HTML。PDF 匯出依賴 Chromium，可透過 `vscode-office.chromiumPath` 設定瀏覽器路徑。
+在編輯器中按右鍵，可將 Markdown 匯出為 PDF、DOCX 或 HTML。PDF 匯出依賴 Chromium，可透過 `vscode-office-lit.chromiumPath` 設定瀏覽器路徑。
 
 ![匯出 Markdown](image/README-CN/1685418034035.png)
 
@@ -41,10 +38,8 @@
 
 ## 其他功能
 
-- HTML: 編輯時按下 `Ctrl+Shift+V` 可即時預覽
-- YAML: 支援文件大綱與錨點導覽（別名引用可跳轉到定義）
-- 圖示主題: 內建 [Material Icon Theme](https://github.com/PKief/vscode-material-icon-theme) 部分圖示，並提供 **Office Material Icon Theme** 與 **One Dark Modern** 配色主題
-- Excel: 支援預覽與儲存 `.xlsx`、`.xls`、`.xlsm`、`.csv`、`.ods` 等檔案（注意儲存 `.xlsx` 可能遺失格式；`.csv` 不支援 GBK 編碼的中文）
+- CSV/TSV: 支援預覽與儲存分隔符文字檔案。
+- 主題: 提供 **One Dark Modern** 配色主題。
 
 ## Sponsor
 
@@ -69,7 +64,7 @@ npm install
 
 ### 開發除錯
 
-**桌面端擴充功能**（完整功能）：
+**桌面端擴充功能**：
 
 ```bash
 npm run dev
@@ -77,7 +72,7 @@ npm run dev
 
 在 VS Code 中按 `F5`，或在「執行和偵錯」中選擇 **Extension**。
 
-**Web 端擴充功能**（瀏覽器中的 Markdown、HTML、YAML）：
+**Web 端擴充功能**：
 
 ```bash
 npm run dev:web
@@ -92,38 +87,7 @@ npm run build    # 生產建置
 npm run package  # 產生 .vsix
 ```
 
-## 使用資料（Usage Data）
-
-Office Viewer 會收集**匿名使用資料**，用於了解各預覽功能的使用情況，以便改進擴充功能。資料透過官方模組 [`@vscode/extension-telemetry`](https://www.npmjs.com/package/@vscode/extension-telemetry) 傳送至 [Azure Application Insights](https://learn.microsoft.com/zh-tw/azure/azure-monitor/app/app-insights-overview)。
-
-### 收集內容
-
-| 事件 | 觸發時機 | 屬性 |
-|------|---------|------|
-| `view.open` | 開啟自訂預覽/編輯器 | `viewType`（如 `excel`、`markdown`、`pdf`）、`fileType`（僅副檔名，如 `xlsx`、`md`） |
-| `markdown.export` | 從編輯器右鍵選單匯出 Markdown | `type`：`pdf`、`html` 或 `docx` |
-
-**不會**收集檔案路徑、檔名、URL、儲存庫名稱、請求內容或其他可識別個人身份的資訊。
-
-### 如何關閉
-
-僅在以下**兩項均允許**時才會上報：
-
-1. VS Code 全域遙測已開啟（`telemetry.telemetryLevel` 不為 `off`，或舊版中 `telemetry.enableTelemetry` 為 `true`）。
-2. 擴充功能遙測已開啟：在設定中將 `vscode-office.enableTelemetry` 設為 `false` 可單獨關閉本擴充功能的上報。
-
-也可在 **設定 → 應用程式 → 遙測** 中關閉 VS Code 的全部遙測。
-
-### 維護者設定
-
-若自行建置並發佈本擴充功能，請參閱 [docs/telemetry.md](docs/telemetry.md) 設定 Azure Application Insights 及範例查詢。
-
 ## Credits
 
-- PDF rendering: [mozilla/pdf.js](https://github.com/mozilla/pdf.js/)
-- DOCX rendering: [VolodymyrBaydalka/docxjs](https://github.com/VolodymyrBaydalka/docxjs)
-- XLSX rendering:
-  - [SheetJS/sheetjs](https://github.com/SheetJS/sheetjs): XLSX parsing
-  - [myliang/x-spreadsheet](https://github.com/myliang/x-spreadsheet): XLSX rendering
+- Spreadsheet UI: [myliang/x-spreadsheet](https://github.com/myliang/x-spreadsheet)
 - Markdown: [Vanessa219/vditor](https://github.com/Vanessa219/vditor)
-- Material Icon theme: [PKief/vscode-material-icon-theme](https://github.com/PKief/vscode-material-icon-theme)

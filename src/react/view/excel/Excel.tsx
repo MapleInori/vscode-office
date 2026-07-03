@@ -117,7 +117,6 @@ function ExcelViewer() {
         const spreadSheet = spreadSheetRef.current;
         if (!spreadSheet) return;
         setSaveAsVisible(false);
-        handler.emit('telemetry', { event: 'excel.saveAs', properties: { format: fmt } });
         try {
             await exportSaveAs(spreadSheet, fmt, csvEncodingRef.current, csvDelimiterRef.current);
             if (!readOnlyRef.current) {
